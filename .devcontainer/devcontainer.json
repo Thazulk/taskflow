@@ -1,0 +1,244 @@
+{
+    "name": "TaskFlow Development Environment",
+    "dockerComposeFile": [
+      "../docker-compose.dev.yml",
+      "docker-compose.devcontainer.yml"
+    ],
+    "service": "devcontainer",
+    "workspaceFolder": "/workspace",
+    "shutdownAction": "stopCompose",
+  
+    // Features to install in the container
+    "features": {
+      "ghcr.io/devcontainers/features/node:1": {
+        "version": "18",
+        "nodeGypDependencies": true,
+        "installYarnUsingApt": true
+      },
+      "ghcr.io/devcontainers/features/git:1": {
+        "version": "latest",
+        "ppa": true
+      },
+      "ghcr.io/devcontainers/features/github-cli:1": {
+        "version": "latest"
+      },
+      "ghcr.io/devcontainers/features/docker-in-docker:2": {
+        "version": "latest",
+        "enableNonRootDocker": true,
+        "moby": true
+      }
+    },
+  
+    // Cursor IDE specific configuration
+    "customizations": {
+      "cursor": {
+        // Extensions to install automatically
+        "extensions": [
+          // TypeScript & JavaScript
+          "ms-vscode.vscode-typescript-next",
+          "bradlc.vscode-tailwindcss",
+          "esbenp.prettier-vscode",
+          "dbaeumer.vscode-eslint",
+          
+          // Database & ORM
+          "Prisma.prisma",
+          "ms-ossdata.vscode-postgresql",
+          "ckolkman.vscode-postgres",
+          
+          // Testing
+          "vitest.explorer",
+          "ms-vscode.test-adapter-converter",
+          
+          // React & Next.js
+          "ms-vscode.vscode-react-javascript-snippets",
+          "burkeholland.simple-react-snippets",
+          "formulahendry.auto-rename-tag",
+          
+          // Docker & Containers
+          "ms-azuretools.vscode-docker",
+          "ms-vscode-remote.remote-containers",
+          
+          // Git & Version Control
+          "eamodio.gitlens",
+          "github.vscode-pull-request-github",
+          "github.copilot",
+          "github.copilot-chat",
+          
+          // Utilities
+          "ms-vscode.vscode-json",
+          "redhat.vscode-yaml",
+          "ms-vscode.vscode-markdown-preview-enhanced",
+          "yzhang.markdown-all-in-one",
+          "streetsidesoftware.code-spell-checker",
+          "ms-vscode.vscode-todo-highlight",
+          "gruntfuggly.todo-tree",
+          
+          // API Development
+          "humao.rest-client",
+          "rangav.vscode-thunder-client",
+          
+          // Environment & Config
+          "mikestead.dotenv",
+          "ms-vscode.vscode-env-file"
+        ],
+        
+        // Cursor-specific settings
+        "settings": {
+          // Editor settings
+          "editor.formatOnSave": true,
+          "editor.formatOnPaste": true,
+          "editor.codeActionsOnSave": {
+            "source.fixAll.eslint": true,
+            "source.organizeImports": true
+          },
+          "editor.defaultFormatter": "esbenp.prettier-vscode",
+          "editor.tabSize": 2,
+          "editor.insertSpaces": true,
+          "editor.detectIndentation": false,
+          "editor.rulers": [80, 120],
+          "editor.wordWrap": "wordWrapColumn",
+          "editor.wordWrapColumn": 80,
+          
+          // File associations
+          "files.associations": {
+            "*.env*": "dotenv",
+            "docker-compose*.yml": "dockercompose",
+            "Dockerfile*": "dockerfile"
+          },
+          "files.exclude": {
+            "**/node_modules": true,
+            "**/.git": true,
+            "**/.DS_Store": true,
+            "**/dist": true,
+            "**/.next": true,
+            "**/coverage": true
+          },
+          
+          // TypeScript settings
+          "typescript.preferences.importModuleSpecifier": "relative",
+          "typescript.suggest.autoImports": true,
+          "typescript.updateImportsOnFileMove.enabled": "always",
+          "typescript.preferences.includePackageJsonAutoImports": "auto",
+          
+          // Prettier settings
+          "prettier.configPath": ".prettierrc",
+          "prettier.ignorePath": ".prettierignore",
+          "prettier.requireConfig": true,
+          
+          // ESLint settings
+          "eslint.workingDirectories": ["frontend", "backend"],
+          "eslint.validate": [
+            "javascript",
+            "javascriptreact",
+            "typescript",
+            "typescriptreact"
+          ],
+          
+          // Prisma settings
+          "prisma.showPrismaDataPlatformNotification": false,
+          
+          // Terminal settings
+          "terminal.integrated.defaultProfile.linux": "bash",
+          "terminal.integrated.profiles.linux": {
+            "bash": {
+              "path": "/bin/bash",
+              "args": ["-l"]
+            }
+          },
+          
+          // Git settings
+          "git.autofetch": true,
+          "git.enableSmartCommit": true,
+          "git.confirmSync": false,
+          
+          // Search settings
+          "search.exclude": {
+            "**/node_modules": true,
+            "**/dist": true,
+            "**/.next": true,
+            "**/coverage": true,
+            "**/.git": true
+          },
+          
+          // Emmet settings
+          "emmet.includeLanguages": {
+            "typescript": "html",
+            "typescriptreact": "html"
+          },
+          
+          // Auto-save
+          "files.autoSave": "onFocusChange",
+          
+          // Cursor AI settings (if available)
+          "cursor.ai.enabled": true,
+          "cursor.ai.model": "gpt-4",
+          "cursor.ai.autoComplete": true
+        }
+      }
+    },
+  
+    // Container user configuration
+    "remoteUser": "node",
+    "containerUser": "node",
+    "updateRemoteUserUID": true,
+  
+    // Port forwarding
+    "forwardPorts": [
+      3000,  // Frontend (Next.js)
+      3001,  // Backend (Express)
+      5432,  // PostgreSQL
+      6379,  // Redis
+      8080,  // pgAdmin
+      5555   // Prisma Studio
+    ],
+    "portsAttributes": {
+      "3000": {
+        "label": "Frontend (Next.js)",
+        "onAutoForward": "notify"
+      },
+      "3001": {
+        "label": "Backend API (Express)",
+        "onAutoForward": "notify"
+      },
+      "5432": {
+        "label": "PostgreSQL Database",
+        "onAutoForward": "silent"
+      },
+      "6379": {
+        "label": "Redis Cache",
+        "onAutoForward": "silent"
+      },
+      "8080": {
+        "label": "pgAdmin",
+        "onAutoForward": "ignore"
+      },
+      "5555": {
+        "label": "Prisma Studio",
+        "onAutoForward": "notify"
+      }
+    },
+  
+    // Post-create commands
+    "postCreateCommand": "bash .devcontainer/post-create.sh",
+    "postStartCommand": "bash .devcontainer/post-start.sh",
+  
+    // Mount points
+    "mounts": [
+      // Mount Docker socket for Docker-in-Docker (Rancher Desktop compatible)
+      "source=/var/run/docker.sock,target=/var/run/docker-host.sock,type=bind",
+      // Alternative for WSL + Rancher Desktop if needed:
+      // "source=${localEnv:DOCKER_HOST:-unix:///var/run/docker.sock},target=/var/run/docker-host.sock,type=bind",
+      // Mount Git config
+      "source=${localEnv:HOME}/.gitconfig,target=/home/node/.gitconfig,type=bind,consistency=cached",
+      // Mount SSH keys
+      "source=${localEnv:HOME}/.ssh,target=/home/node/.ssh,type=bind,consistency=cached"
+    ],
+  
+    // Environment variables
+    "containerEnv": {
+      "NODE_ENV": "development",
+      "DOCKER_HOST": "unix:///var/run/docker-host.sock",
+      "DOCKER_BUILDKIT": "1",
+      "COMPOSE_DOCKER_CLI_BUILD": "1"
+    }
+  }

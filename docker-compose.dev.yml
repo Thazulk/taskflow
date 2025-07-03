@@ -1,0 +1,70 @@
+version: '3.8'
+
+# Development services that can be run independently
+# This file is referenced by devcontainer.json
+
+services:
+  # Development database (can be run separately from devcontainer)
+  postgres-dev:
+    image: postgres:15-alpine
+    container_name: taskflow-postgres-dev-standalone
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: taskflow_dev
+      POSTGRES_USER: taskflow
+      POSTGRES_PASSWORD: dev_password
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d
+    networks:
+      - taskflow-dev-network
+
+  # Development Redis (can be run separately from devcontainer)
+  redis-dev:
+    image: redis:7-alpine
+    container_name: taskflow-redis-dev-standalone
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    networks:
+      - taskflow-dev-network
+    command: redis-server --appendonly yes
+
+  # Development pgAdmin (can be run separately from devcontainer)
+  pgadmin-dev:
+    image: dpage/pgadmin4:latest
+    container_name: taskflow-pgadmin-dev-standalone
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@taskflow.dev}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-TaskFlowDev2024!}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: 'True'
+      PGADMIN_CONFIG_LOGIN_BANNER: 'Development Environment - TaskFlow'
+    ports:
+      - "8080:80"
+    volumes:
+      - pgadmin_dev_data:/var/lib/pgadmin
+      # Mount server configuration for easier setup
+      - ./pgadmin-servers.json:/pgadmin4/servers.json:ro
+    networks:
+      - taskflow-dev-network
+    depends_on:
+      - postgres-dev
+
+volumes:
+  postgres_dev_data:
+    driver: local
+  redis_dev_data:
+    driver: local
+  pgadmin_dev_data:
+    driver: local
+
+networks:
+  taskflow-dev-network:
+    driver: bridge

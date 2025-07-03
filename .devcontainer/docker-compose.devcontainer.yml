@@ -1,0 +1,105 @@
+version: '3.8'
+
+services:
+  devcontainer:
+    build:
+      context: .
+      dockerfile: Dockerfile.devcontainer
+    volumes:
+      - ../:/workspace:cached
+      - node_modules_frontend:/workspace/frontend/node_modules
+      - node_modules_backend:/workspace/backend/node_modules
+      - node_modules_root:/workspace/node_modules
+    command: sleep infinity
+    networks:
+      - taskflow-network
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://taskflow:dev_password@postgres:5432/taskflow_dev
+      - DATABASE_URL_TEST=postgresql://taskflow:test_password@postgres-test:5432/taskflow_test
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: taskflow-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: taskflow_dev
+      POSTGRES_USER: taskflow
+      POSTGRES_PASSWORD: dev_password
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../database/init:/docker-entrypoint-initdb.d
+    networks:
+      - taskflow-network
+
+  postgres-test:
+    image: postgres:15-alpine
+    container_name: taskflow-postgres-test
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: taskflow_test
+      POSTGRES_USER: taskflow
+      POSTGRES_PASSWORD: test_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    networks:
+      - taskflow-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: taskflow-redis-dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - taskflow-network
+    command: redis-server --appendonly yes
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: taskflow-pgadmin-dev
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@taskflow.dev}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-TaskFlowDev2024!}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: 'True'
+      PGADMIN_CONFIG_LOGIN_BANNER: 'Development Environment - TaskFlow'
+    ports:
+      - "8080:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./pgadmin-servers.json:/pgadmin4/servers.json:ro
+    networks:
+      - taskflow-network
+
+volumes:
+  postgres_data:
+    driver: local
+  postgres_test_data:
+    driver: local
+  redis_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+  node_modules_frontend:
+    driver: local
+  node_modules_backend:
+    driver: local
+  node_modules_root:
+    driver: local
+
+networks:
+  taskflow-network:
+    driver: bridge

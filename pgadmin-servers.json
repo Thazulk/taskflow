@@ -1,0 +1,40 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "TaskFlow Development",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "taskflow_dev",
+      "Username": "taskflow",
+      "SSLMode": "prefer",
+      "SSLCert": "<STORAGE_DIR>/.postgresql/postgresql.crt",
+      "SSLKey": "<STORAGE_DIR>/.postgresql/postgresql.key",
+      "SSLCompression": 0,
+      "Timeout": 10,
+      "UseSSHTunnel": 0,
+      "TunnelHost": "",
+      "TunnelPort": "22",
+      "TunnelUsername": "",
+      "TunnelAuthentication": 0
+    },
+    "2": {
+      "Name": "TaskFlow Test",
+      "Group": "Servers",
+      "Host": "postgres-test",
+      "Port": 5432,
+      "MaintenanceDB": "taskflow_test",
+      "Username": "taskflow",
+      "SSLMode": "prefer",
+      "SSLCert": "<STORAGE_DIR>/.postgresql/postgresql.crt",
+      "SSLKey": "<STORAGE_DIR>/.postgresql/postgresql.key",
+      "SSLCompression": 0,
+      "Timeout": 10,
+      "UseSSHTunnel": 0,
+      "TunnelHost": "",
+      "TunnelPort": "22",
+      "TunnelUsername": "",
+      "TunnelAuthentication": 0
+    }
+  }
+} 

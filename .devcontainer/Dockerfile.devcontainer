@@ -1,0 +1,60 @@
+FROM mcr.microsoft.com/devcontainers/typescript-node:18-bullseye
+
+# Install additional system dependencies
+RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get -y install --no-install-recommends \
+        postgresql-client \
+        redis-tools \
+        curl \
+        wget \
+        unzip \
+        git \
+        vim \
+        nano \
+        htop \
+        tree \
+        jq \
+        build-essential \
+        python3 \
+        python3-pip \
+    && apt-get autoremove -y && apt-get clean -y
+
+# Install global npm packages
+RUN npm install -g \
+    @prisma/cli \
+    prisma \
+    typescript \
+    ts-node \
+    nodemon \
+    concurrently \
+    npm-check-updates \
+    @nestjs/cli \
+    create-next-app \
+    vercel
+
+# Install Docker Compose
+RUN curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose \
+    && chmod +x /usr/local/bin/docker-compose
+
+# Create workspace directory
+RUN mkdir -p /workspace && chown -R node:node /workspace
+
+# Switch to node user
+USER node
+
+# Set up shell environment
+RUN echo 'export PATH="$PATH:/workspace/node_modules/.bin"' >> ~/.bashrc \
+    && echo 'alias ll="ls -la"' >> ~/.bashrc \
+    && echo 'alias la="ls -la"' >> ~/.bashrc \
+    && echo 'alias ..="cd .."' >> ~/.bashrc \
+    && echo 'alias ...="cd ../.."' >> ~/.bashrc \
+    && echo 'alias gs="git status"' >> ~/.bashrc \
+    && echo 'alias gp="git pull"' >> ~/.bashrc \
+    && echo 'alias gc="git commit"' >> ~/.bashrc \
+    && echo 'alias gco="git checkout"' >> ~/.bashrc \
+    && echo 'alias db:start="docker-compose -f docker-compose.dev.yml up postgres redis -d"' >> ~/.bashrc \
+    && echo 'alias db:stop="docker-compose -f docker-compose.dev.yml down"' >> ~/.bashrc \
+    && echo 'alias db:logs="docker-compose -f docker-compose.dev.yml logs -f postgres"' >> ~/.bashrc
+
+# Set working directory
+WORKDIR /workspace
