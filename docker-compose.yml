@@ -1,0 +1,100 @@
+# docker-compose.yml (for local development's shared services)
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: taskflow-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DEV_POSTGRES_DB}
+      POSTGRES_USER: ${DEV_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${DEV_POSTGRES_PASSWORD}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+    ports:
+      - "5432:5432" # Map container port 5432 to host port 5432 for host access (e.g., DBeaver)
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d # Mount init scripts
+    networks:
+      - taskflow-network
+    healthcheck: # Health check for better startup dependency management
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${DEV_POSTGRES_USER} -d ${DEV_POSTGRES_DB}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  postgres-test:
+    image: postgres:15-alpine
+    container_name: taskflow-postgres-test
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DEV_POSTGRES_TEST_DB}
+      POSTGRES_USER: ${DEV_POSTGRES_USER} # Same user for simplicity
+      POSTGRES_PASSWORD: ${DEV_POSTGRES_TEST_PASSWORD}
+    ports:
+      - "5433:5432" # Map container port 5432 to host port 5433 for test database
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    networks:
+      - taskflow-network
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${DEV_POSTGRES_USER} -d ${DEV_POSTGRES_TEST_DB}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: taskflow-redis-dev
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${DEV_REDIS_PASSWORD} # If you set a password for Redis
+    ports:
+      - "6379:6379" # Map container port 6379 to host port 6379
+    volumes:
+      - redis_data:/data
+    networks:
+      - taskflow-network
+    command: redis-server --appendonly yes # Ensure persistence
+    healthcheck:
+      test: ["CMD", "redis-cli", "-h", "localhost", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: taskflow-pgadmin-dev
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${DEV_PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${DEV_PGADMIN_PASSWORD}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "8080:80" # Access pgAdmin at http://localhost:8080
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - taskflow-network
+    depends_on:
+      postgres:
+        condition: service_healthy # Wait for postgres to be healthy
+
+volumes:
+  postgres_data:
+  postgres_test_data:
+  redis_data:
+  pgadmin_data:
+
+networks:
+  taskflow-network:
+    driver: bridge # Defines a custom bridge network for internal communication

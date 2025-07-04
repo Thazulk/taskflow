@@ -1,0 +1,117 @@
+# docker-compose.prod.yml (for production deployment)
+version: "3.8"
+
+services:
+  # Frontend service
+  frontend:
+    build:
+      context: ./frontend # Build from frontend/Dockerfile
+      dockerfile: Dockerfile
+    image: ${DOCKER_REGISTRY_URL}/taskflow-frontend:${APP_VERSION:-latest} # Use image tag from env/CI
+    container_name: taskflow-frontend-prod
+    restart: unless-stopped
+    environment:
+      # These variables are injected into the Next.js app at build time or runtime
+      NEXT_PUBLIC_API_URL: ${PROD_API_URL}
+      NEXT_PUBLIC_APP_URL: ${PROD_FRONTEND_URL}
+      NODE_ENV: production
+    ports:
+      - "80:3000" # Map host port 80 (HTTP) to container port 3000
+    networks:
+      - taskflow-network
+    # deploy: # Example deployment configs for Swarm/Kubernetes (if using Docker Compose for orchestrating)
+    #   resources:
+    #     limits:
+    #       cpus: '0.5'
+    #       memory: '512M'
+
+  # Backend service
+  backend:
+    build:
+      context: ./backend # Build from backend/Dockerfile
+      dockerfile: Dockerfile
+    image: ${DOCKER_REGISTRY_URL}/taskflow-backend:${APP_VERSION:-latest} # Use image tag from env/CI
+    container_name: taskflow-backend-prod
+    restart: unless-stopped
+    environment:
+      # Connect to database via service name within Docker network
+      DATABASE_URL: postgresql://${PROD_POSTGRES_USER}:${PROD_POSTGRES_PASSWORD}@postgres:5432/${PROD_POSTGRES_DB}
+      REDIS_URL: redis://:${PROD_REDIS_PASSWORD}@redis:6379 # With password
+      JWT_SECRET: ${PROD_JWT_SECRET}
+      NODE_ENV: production
+      PORT: 3001
+    ports:
+      - "3001:3001" # Expose backend port if needed for direct access or internal communication
+    networks:
+      - taskflow-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '1.0'
+    #       memory: '1024M'
+
+  # Database service (if self-hosting in Docker for production)
+  # NOTE: Managed cloud database service (e.g., AWS RDS) is STRONGLY RECOMMENDED for production.
+  postgres:
+    # If using your custom database/Dockerfile:
+    # build:
+    #   context: ./database
+    #   dockerfile: Dockerfile
+    # image: ${DOCKER_REGISTRY_URL}/taskflow-postgres:${APP_VERSION:-latest}
+    image: postgres:15-alpine # Or use the base image directly
+    container_name: taskflow-postgres-prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${PROD_POSTGRES_DB}
+      POSTGRES_USER: ${PROD_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${PROD_POSTGRES_PASSWORD}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data # Persist data
+      - ./database/init:/docker-entrypoint-initdb.d # Run init scripts
+    networks:
+      - taskflow-network
+    healthcheck: # Essential for production
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${PROD_POSTGRES_USER} -d ${PROD_POSTGRES_DB}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Do NOT expose database port to host unless absolutely necessary and firewalled
+    # ports:
+    #   - "5432:5432"
+
+  # Redis service (if self-hosting in Docker for production)
+  redis:
+    image: redis:7-alpine
+    container_name: taskflow-redis-prod
+    restart: unless-stopped
+    volumes:
+      - redis_prod_data:/data # Persist data
+    networks:
+      - taskflow-network
+    command: redis-server --appendonly yes --requirepass ${PROD_REDIS_PASSWORD} # Add password
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${PROD_REDIS_PASSWORD}", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    # Do NOT expose Redis port to host unless necessary and firewalled
+    # ports:
+    #   - "6379:6379"
+
+volumes:
+  postgres_prod_data:
+  redis_prod_data:
+
+networks:
+  taskflow-network:
+    driver: bridge
