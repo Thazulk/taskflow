@@ -1,10 +1,10 @@
-version: '3.8'
+version: "3.8"
 
 services:
   devcontainer:
     build:
       context: .
-      dockerfile: Dockerfile.devcontainer
+      dockerfile: ./.devcontainer/Dockerfile.devcontainer
     volumes:
       - ../:/workspace:cached
       - node_modules_frontend:/workspace/frontend/node_modules
@@ -73,9 +73,9 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@taskflow.dev}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-TaskFlowDev2024!}
-      PGADMIN_CONFIG_SERVER_MODE: 'False'
-      PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: 'True'
-      PGADMIN_CONFIG_LOGIN_BANNER: 'Development Environment - TaskFlow'
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: "True"
+      PGADMIN_CONFIG_LOGIN_BANNER: "Development Environment - TaskFlow"
     ports:
       - "8080:80"
     volumes:
